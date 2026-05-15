@@ -69,19 +69,25 @@ const ClientsService = () => {
       .catch(() => [null, true]);
   };
 
-  const removeClient = async (uid) => {
+  // const removeClient = async (uid) => {
+  //   if (uid) {
+  //     const snapshot = await get(ref(firebase.db, `${table}/${uid}`));
+  //     if (snapshot.exists()) {
+  //       const res = await Api.delete(`/user/deleteClient/${uid}`);
+  //       if (res.data.success) {
+  //         await set(ref(firebase.db, `removed/${table}/${uid}`), snapshot.val());
+  //         await remove(ref(firebase.db, `${table}/${uid}`))
+  //       }
+  //     }
+  //   }
+  // };
+
+  const removeClientLocally = async (uid) => {
     if (uid) {
-      const snapshot = await get(ref(firebase.db, `${table}/${uid}`));
-      if (snapshot.exists()) {
-        const res = await Api.delete(`/user/deleteClient/${uid}`);
-        if (res.data.success) {
-          await set(ref(firebase.db, `removed/${table}/${uid}`), snapshot.val());
-          await remove(ref(firebase.db, `${table}/${uid}`))
-        }
-      }
+      setData(data.filter(u => u.uid !== uid))
     }
   };
 
-  return { data, checkWebstoreNameAvailability, save, saveUpdate, reload, removeClient };
+  return { data, checkWebstoreNameAvailability, save, saveUpdate, reload, removeClientLocally };
 };
 export default ClientsService;
