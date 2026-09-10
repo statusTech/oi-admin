@@ -152,6 +152,13 @@ const Organization = ({ history }) => {
       setButtonLoading(true);
 
       if (!!eCommerce.webstoreUrl) {
+
+        if (!eCommerce.credit && !eCommerce.pix) {
+          alert('Para habilitar a loja virtual, é necessário habilitar pelo menos uma forma de pagamento (PIX ou Crédito)');
+          setButtonLoading(false);
+          return;
+        }
+        
         const isWebstoreNameAvailable = await clientsService.checkWebstoreNameAvailability(eCommerce.webstoreUrl)
 
         if (!isWebstoreNameAvailable) {
@@ -222,6 +229,13 @@ const Organization = ({ history }) => {
       setButtonLoading(true);
 
       if (!!eCommerce.webstoreUrl) {
+
+        if (!eCommerce.credit && !eCommerce.pix) {
+          alert('Para habilitar a loja virtual, é necessário habilitar pelo menos uma forma de pagamento (PIX ou Crédito)');
+          setButtonLoading(false);
+          return;
+        }
+        
         const isWebstoreNameAvailable = await clientsService.checkWebstoreNameAvailability(eCommerce.webstoreUrl, client.uidUser)
 
         if (!isWebstoreNameAvailable) {
@@ -566,7 +580,19 @@ const Organization = ({ history }) => {
                     label='Status'
                     name='status'
                     value={client.status}
-                    control={<GreenSwitch checked={client.status} onChange={(e) => setClient({ ...client, status: e.target.checked })} />}
+                    control={
+                      <GreenSwitch
+                        checked={client.status} 
+                        onChange={(e) => {
+                          setClient({ 
+                            ...client, 
+                            status: e.target.checked,
+                            hasECommerce: e.target.checked ? client.hasECommerce : false,
+                            onlyECommerce: e.target.checked ? client.onlyECommerce : false
+                          })} 
+                        }
+                      />
+                    }
                   />
                 </Grid>
                 <Grid item>
@@ -574,6 +600,7 @@ const Organization = ({ history }) => {
                     label='Loja virtual'
                     name='hasEcommerce'
                     value={client.hasECommerce}
+                    disabled={!client.status}
                     control={<GreenSwitch checked={client.hasECommerce} onChange={(e) => { setClient({ ...client, hasECommerce: e.target.checked }); setECommerce({ ...eCommerceDefault, webstoreUrl: initialECommerceWebstoreUrl }) }} />}
                   />
                 </Grid>
@@ -582,6 +609,7 @@ const Organization = ({ history }) => {
                     label='Somente loja virtual'
                     name='onlyEcommerce'
                     value={client.onlyECommerce}
+                    disabled={!client.status}
                     control={<GreenSwitch checked={client.onlyECommerce} onChange={(e) => setClient({ ...client, onlyECommerce: e.target.checked })} />}
                   />
                 </Grid>
