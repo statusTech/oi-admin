@@ -1,8 +1,7 @@
 import firebase from '../firebase';
-import { ref, set, get, update, push, child, remove } from 'firebase/database';
+import { ref, set, get, update, push, child } from 'firebase/database';
 import { useState, useEffect } from 'react';
 import Clients from '../models/Clients';
-import Api from '../api';
 
 const ClientsService = () => {
   const table = 'Clients';

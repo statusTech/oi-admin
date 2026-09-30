@@ -35,6 +35,7 @@ const Organization = ({ history }) => {
     adminTaxMinimum: 0,
     chargeClient: false,
     credit: false,
+    allowInstallments: false,
     pix: false,
     hasSplit: false,
     splitValue: 0,
@@ -158,7 +159,7 @@ const Organization = ({ history }) => {
           setButtonLoading(false);
           return;
         }
-        
+
         const isWebstoreNameAvailable = await clientsService.checkWebstoreNameAvailability(eCommerce.webstoreUrl)
 
         if (!isWebstoreNameAvailable) {
@@ -235,7 +236,7 @@ const Organization = ({ history }) => {
           setButtonLoading(false);
           return;
         }
-        
+
         const isWebstoreNameAvailable = await clientsService.checkWebstoreNameAvailability(eCommerce.webstoreUrl, client.uidUser)
 
         if (!isWebstoreNameAvailable) {
@@ -582,14 +583,15 @@ const Organization = ({ history }) => {
                     value={client.status}
                     control={
                       <GreenSwitch
-                        checked={client.status} 
+                        checked={client.status}
                         onChange={(e) => {
-                          setClient({ 
-                            ...client, 
+                          setClient({
+                            ...client,
                             status: e.target.checked,
                             hasECommerce: e.target.checked ? client.hasECommerce : false,
                             onlyECommerce: e.target.checked ? client.onlyECommerce : false
-                          })} 
+                          })
+                        }
                         }
                       />
                     }
@@ -623,7 +625,7 @@ const Organization = ({ history }) => {
               <FormECommerce
                 data={eCommerce}
                 setData={setECommerce}
-                isWebstoreNameAvailable={!initialECommerceWebstoreUrl} 
+                isWebstoreNameAvailable={!initialECommerceWebstoreUrl}
                 clientId={client.uid}
               />
             </>)}

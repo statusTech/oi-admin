@@ -6,9 +6,9 @@ import EaseGrid from '../../components/EaseGrid';
 import ButtonRound from '../../components/ButtonRound';
 import { Check, Close } from '@material-ui/icons';
 import ClientsService from './../../service/clients';
-import firebase from '../../firebase';
-import { ref, onValue } from "firebase/database";
-import axios from 'axios';
+// import firebase from '../../firebase';
+// import { ref, onValue } from "firebase/database";
+// import axios from 'axios';
 import ModalPassword from './changePassword';
 import { formatDate } from '../../utils/date';
 import { cpfCnpjMask } from '../../utils/mask';
@@ -131,25 +131,25 @@ const Settings = () => {
     setUserId(id);
     setShowModal(true);
   };
-  const handleUpdate = async () => {
-    setLoading(true)
-    onValue(ref(firebase.db, '/Clients'), async (snapshot) => {
-      const clients = snapshot.val();
-      for (const key in clients) {
-        const { dbName } = clients[key];
-        const res = await axios.post(
-          'https://api-databases.oitickets.com.br/updatedatabase',
-          { database: dbName },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-      }
-      setLoading(false)
-    });
-  };
+  // const handleUpdate = async () => {
+  //   setLoading(true)
+  //   onValue(ref(firebase.db, '/Clients'), async (snapshot) => {
+  //     const clients = snapshot.val();
+  //     for (const key in clients) {
+  //       const { dbName } = clients[key];
+  //       const res = await axios.post(
+  //         'https://api-databases.oitickets.com.br/updatedatabase',
+  //         { database: dbName },
+  //         {
+  //           headers: {
+  //             'Content-Type': 'application/json',
+  //           },
+  //         }
+  //       );
+  //     }
+  //     setLoading(false)
+  //   });
+  // };
 
   return loading ? (
     <Grid container spacing={2} justifyContent='center'>
