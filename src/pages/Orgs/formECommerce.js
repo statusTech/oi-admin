@@ -46,7 +46,7 @@ const FormECommerce = ({
             if (req.data?.success && req.data?.authUrl) {
                 setOAuthAuthenticationUrl(req.data.authUrl)
             }
-        } catch (error) {}
+        } catch (error) { }
 
         setButtonLoading(false)
     }
@@ -129,9 +129,29 @@ const FormECommerce = ({
                             label='Cartão de crédito'
                             name='credit'
                             value={data.credit}
-                            control={<GreenSwitch checked={data.credit} onChange={(e) => setData({ ...data, credit: e.target.checked })} />}
+                            control={
+                                <GreenSwitch
+                                    checked={data.credit}
+                                    onChange={(e) => setData({
+                                        ...data,
+                                        credit: e.target.checked,
+                                        allowInstallments: e.target.checked ? data.allowInstallments : false
+                                    })}
+                                />
+                            }
                         />
                     </Grid>
+
+                    {data.credit && (
+                        <Grid item xl={2} lg={2} md={4} sm={6} xs={6}>
+                            <FormControlLabel
+                                label='Permitir parcelamento'
+                                name='allowInstallments'
+                                value={data.allowInstallments}
+                                control={<GreenSwitch checked={data.allowInstallments} onChange={(e) => setData({ ...data, allowInstallments: e.target.checked })} />}
+                            />
+                        </Grid>
+                    )}
 
                     <Grid item xs={4}>
                         <Grid item xl={2} lg={2} md={4} sm={6} xs={6}>
