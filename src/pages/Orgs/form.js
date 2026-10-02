@@ -36,6 +36,8 @@ const Organization = ({ history }) => {
     chargeClient: false,
     credit: false,
     allowInstallments: false,
+    additionalTaxCard: null,
+    additionalTaxPix: null,
     pix: false,
     hasSplit: false,
     splitValue: 0,

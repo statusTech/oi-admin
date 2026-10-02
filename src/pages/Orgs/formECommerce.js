@@ -164,6 +164,8 @@ const FormECommerce = ({
                         </Grid>
                     </Grid>
                 </Grid>
+                <Grid container spacing={2}>
+                </Grid>
 
             </Grid>
 
@@ -197,7 +199,7 @@ const FormECommerce = ({
                             label='Split'
                             name='split'
                             value={data.hasSplit}
-                            control={<GreenSwitch checked={data.hasSplit} onChange={(e) => setData({ ...data, splitValue: 0, splitPercentage: 0, hasSplit: e.target.checked })} />}
+                            control={<GreenSwitch checked={data.hasSplit} onChange={(e) => setData({ ...data, splitValue: 0, splitPercentage: 0, additionalTaxCard: null, additionalTaxPix: null, hasSplit: e.target.checked })} />}
                         />
                     </Grid>
                     {/* {data.hasSplit && (<><Grid item md={4} xs={12}>
@@ -243,6 +245,35 @@ const FormECommerce = ({
                     )}
                 </Grid>
             </Grid>
+
+            {data.hasSplit && (
+                <Grid item container lg={12} md={12} sm={12} xs={12} spacing={2}>
+                    <Grid item md={2} xs={12}>
+                        <TextField
+                            label='Taxa adicional cartão (%)'
+                            name='additionalTaxCard'
+                            value={percentageMask(data.additionalTaxCard)}
+                            onChange={(e) => setData({ ...data, additionalTaxCard: removeMask(e.target.value) })}
+                            variant='outlined'
+                            type='text'
+                            size='small'
+                            fullWidth
+                        />
+                    </Grid>
+                    <Grid item md={2} xs={12}>
+                        <TextField
+                            label='Taxa adicional PIX (%)'
+                            name='additionalTaxPix'
+                            value={percentageMask(data.additionalTaxPix)}
+                            onChange={(e) => setData({ ...data, additionalTaxPix: removeMask(e.target.value) })}
+                            variant='outlined'
+                            type='text'
+                            size='small'
+                            fullWidth
+                        />
+                    </Grid>
+                </Grid>
+            )}
 
             {data.hasSplit && (
                 <Grid item container lg={12} md={12} sm={12} xs={12} spacing={2}>
