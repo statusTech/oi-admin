@@ -72,7 +72,7 @@ const FormECommerce = ({
                     label='Cobrar do cliente'
                     name='cashless'
                     value={data.chargeClient}
-                    control={<GreenSwitch checked={data.chargeClient} onChange={(e) => setData({ ...data, chargeClient: e.target.checked })} />}
+                    control={<GreenSwitch checked={data.chargeClient} onChange={(e) => setData({ ...data, chargeClient: e.target.checked, ...(e.target.checked ? {} : { additionalTaxCard: null, additionalTaxPix: null }) })} />}
                 />
             </Grid>
             <Grid item md={2} xs={12}>
@@ -246,7 +246,7 @@ const FormECommerce = ({
                 </Grid>
             </Grid>
 
-            {data.hasSplit && (
+            {data.hasSplit && data.chargeClient && (
                 <Grid item container lg={12} md={12} sm={12} xs={12} spacing={2}>
                     <Grid item md={2} xs={12}>
                         <TextField
