@@ -1,7 +1,8 @@
-import { Button, CircularProgress, Divider, FormControlLabel, Grid, Switch, TextField, Typography, withStyles } from '@material-ui/core'
+import { Button, CircularProgress, Divider, FormControlLabel, Grid, MenuItem, Switch, TextField, Typography, withStyles } from '@material-ui/core'
 import React, { useState } from 'react'
 import { currencyMask, percentageMask, removeMask } from '../../utils/mask'
 import Api from '../../api';
+import FormPagbank from './formPagbank';
 
 const defaultApiEndpoint = "https://api.oitickets.com.br/api/v1"
 
@@ -14,6 +15,10 @@ const FormECommerce = ({
 
     const [buttonLoading, setButtonLoading] = useState(false);
     const [oAuthAuthenticationUrl, setOAuthAuthenticationUrl] = useState(null);
+
+    // Ausente = Mercado Pago (lojas anteriores ao campo)
+    const splitProvider = data.splitProvider ?? 'mercadopago'
+    const isPagbank = splitProvider === 'pagbank'
 
     const GreenSwitch = withStyles({
         switchBase: {
@@ -229,9 +234,35 @@ const FormECommerce = ({
                 </Grid>
             </Grid>
 
+            {data.hasSplit && (
+                <Grid item container lg={12} md={12} sm={12} xs={12} spacing={2}>
+                    <Grid item md={2} xs={12}>
+                        <TextField
+                            select
+                            label='Split via'
+                            name='splitProvider'
+                            value={splitProvider}
+                            onChange={(e) => setData({ ...data, splitProvider: e.target.value })}
+                            variant='outlined'
+                            size='small'
+                            fullWidth
+                        >
+                            <MenuItem value='mercadopago'>Mercado Pago</MenuItem>
+                            <MenuItem value='pagbank'>PagBank</MenuItem>
+                        </TextField>
+                    </Grid>
+                </Grid>
+            )}
+
+            {data.hasSplit && isPagbank && (
+                <Grid item container lg={12} md={12} sm={12} xs={12} spacing={2}>
+                    <FormPagbank clientId={clientId} />
+                </Grid>
+            )}
+
             <Grid item container lg={12} md={12} sm={12} xs={12} spacing={2}>
                 <Grid item xs={4}>
-                    {data.hasSplit && (
+                    {data.hasSplit && !isPagbank && (
                         <TextField
                             label='ID do Mercado Pago'
                             name='gatewayToken'
@@ -275,7 +306,7 @@ const FormECommerce = ({
                 </Grid>
             )}
 
-            {data.hasSplit && (
+            {data.hasSplit && !isPagbank && (
                 <Grid item container lg={12} md={12} sm={12} xs={12} spacing={2}>
                     <Grid item xs={4}>
                         <TextField
@@ -297,7 +328,7 @@ const FormECommerce = ({
                     </Grid>
                 </Grid>
             )}
-            {data.hasSplit && (
+            {data.hasSplit && !isPagbank && (
                 <Grid item container lg={12} md={12} sm={12} xs={12} spacing={2} alignItems='center'>
                     <Grid item xs={2}>
                         <Button onClick={loadOAuthUrl} variant='text' color='primary'>
