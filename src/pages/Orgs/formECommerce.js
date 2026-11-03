@@ -30,10 +30,15 @@ const FormECommerce = ({
             const req = await Api.get(`/oauth/mercadopago/status?clientId=${clientId}`, {
                 baseURL: defaultApiEndpoint,
             })
-            setMpStatus(req.data ?? null)
+            if (!req.data || req.data.success === false) {
+                setMpStatus(null)
+                setMpStatusError(req.data?.message || true)
+            } else {
+                setMpStatus(req.data)
+            }
         } catch (error) {
             setMpStatus(null)
-            setMpStatusError(true)
+            setMpStatusError(error?.response?.data?.message || true)
         }
 
         setMpStatusLoading(false)
@@ -51,13 +56,27 @@ const FormECommerce = ({
 
     const renderMpStatus = () => {
         const box = (bg, color, children) => (
-            <div style={{ background: bg, color, padding: 12, borderRadius: 4, width: '100%' }}>{children}</div>
+            <div style={{ background: bg, color, padding: 12, borderRadius: 4, width: '100%' }}>
+                {children}
+            </div>
+        )
+
+        const refreshBtn = (
+            <div style={{ marginTop: 8 }}>
+                <Button onClick={loadMpStatus} variant='outlined' color='primary' size='small' disabled={mpStatusLoading}>
+                    Atualizar status
+                </Button>
+            </div>
         )
 
         if (mpStatusLoading && !mpStatus) return <CircularProgress size={20} />
 
         if (mpStatusError) {
-            return box('#fff3e0', '#e65100', 'Não foi possível consultar o status da conexão com o Mercado Pago. Tente novamente em "Atualizar status".')
+            return box('#fff3e0', '#e65100', <>
+                Não foi possível consultar o status da conexão com o Mercado Pago.
+                {typeof mpStatusError === 'string' ? <> Motivo: {mpStatusError}.</> : null}
+                {refreshBtn}
+            </>)
         }
 
         if (!mpStatus) return null
@@ -65,8 +84,11 @@ const FormECommerce = ({
         const expired = mpStatus.status === 'expired' || mpStatus.is_expired || (mpStatus.connected && mpStatus.status && mpStatus.status !== 'active')
 
         if (expired) {
+            const revoked = mpStatus.status === 'revoked'
             return box('#fff3e0', '#e65100', <>
-                <strong>Reconectar:</strong> a conexão com a conta Mercado Pago venceu (conta {mpStatus.user_id ?? '-'}, venceu em {formatDate(mpStatus.expires_at)}). Gere o link e envie ao organizador.
+                <strong>Reconectar:</strong> {revoked ? 'a conexão com a conta Mercado Pago foi revogada' : 'a conexão com a conta Mercado Pago venceu'} (conta {mpStatus.user_id ?? '-'}{mpStatus.expires_at ? `, venceu em ${formatDate(mpStatus.expires_at)}` : ''}). Gere o link e envie ao organizador.
+                {mpStatus.message ? <div>{mpStatus.message}</div> : null}
+                {refreshBtn}
             </>)
         }
 
@@ -100,7 +122,10 @@ const FormECommerce = ({
             )
         }
 
-        return box('#ffebee', '#b71c1c', <strong>Conta Mercado Pago não conectada: as vendas caem na conta da Oi, sem split. Gere o link e envie ao organizador.</strong>)
+        return box('#ffebee', '#b71c1c', <>
+            <strong>Conta Mercado Pago não conectada: as vendas caem na conta da Oi, sem split. Gere o link e envie ao organizador.</strong>
+            {refreshBtn}
+        </>)
     }
 
     const GreenSwitch = withStyles({
