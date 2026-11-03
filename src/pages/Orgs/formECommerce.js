@@ -1,5 +1,5 @@
-import { Button, CircularProgress, Divider, FormControlLabel, Grid, Switch, TextField, Typography, withStyles } from '@material-ui/core'
-import React, { useState } from 'react'
+import { Button, CircularProgress, Divider, FormControlLabel, Grid, Switch, TextField, Typography, useMediaQuery, withStyles } from '@material-ui/core'
+import React, { useCallback, useEffect, useState } from 'react'
 import { currencyMask, percentageMask, removeMask } from '../../utils/mask'
 import Api from '../../api';
 
@@ -12,8 +12,96 @@ const FormECommerce = ({
     clientId
 }) => {
 
+    const isXs = useMediaQuery(theme => theme.breakpoints.down('xs'));
+
     const [buttonLoading, setButtonLoading] = useState(false);
     const [oAuthAuthenticationUrl, setOAuthAuthenticationUrl] = useState(null);
+
+    const [mpStatus, setMpStatus] = useState(null);
+    const [mpStatusLoading, setMpStatusLoading] = useState(false);
+    const [mpStatusError, setMpStatusError] = useState(false);
+
+    const loadMpStatus = useCallback(async () => {
+        if (!clientId) return
+        setMpStatusLoading(true)
+        setMpStatusError(false)
+
+        try {
+            const req = await Api.get(`/oauth/mercadopago/status?clientId=${clientId}`, {
+                baseURL: defaultApiEndpoint,
+            })
+            setMpStatus(req.data ?? null)
+        } catch (error) {
+            setMpStatus(null)
+            setMpStatusError(true)
+        }
+
+        setMpStatusLoading(false)
+    }, [clientId])
+
+    useEffect(() => {
+        if (data.hasSplit) loadMpStatus()
+    }, [data.hasSplit, loadMpStatus])
+
+    const formatDate = (v) => {
+        if (!v) return '-'
+        const d = new Date(v)
+        return isNaN(d.getTime()) ? String(v) : d.toLocaleString('pt-BR')
+    }
+
+    const renderMpStatus = () => {
+        const box = (bg, color, children) => (
+            <div style={{ background: bg, color, padding: 12, borderRadius: 4, width: '100%' }}>{children}</div>
+        )
+
+        if (mpStatusLoading && !mpStatus) return <CircularProgress size={20} />
+
+        if (mpStatusError) {
+            return box('#fff3e0', '#e65100', 'Não foi possível consultar o status da conexão com o Mercado Pago. Tente novamente em "Atualizar status".')
+        }
+
+        if (!mpStatus) return null
+
+        const expired = mpStatus.status === 'expired' || mpStatus.is_expired || (mpStatus.connected && mpStatus.status && mpStatus.status !== 'active')
+
+        if (expired) {
+            return box('#fff3e0', '#e65100', <>
+                <strong>Reconectar:</strong> a conexão com a conta Mercado Pago venceu (conta {mpStatus.user_id ?? '-'}, venceu em {formatDate(mpStatus.expires_at)}). Gere o link e envie ao organizador.
+            </>)
+        }
+
+        if (mpStatus.connected) {
+            return box('#e8f5e9', '#1b5e20', 
+                <Grid container direction={isXs ? 'column' : 'row'} spacing={isXs ? 4 : 2} alignItems={isXs ? 'stretch' : 'center'}>
+                    <Grid item xs={12} sm={7} container direction='column' spacing={1}>
+                        <strong>Conectado</strong>
+                        <Grid item style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ flex: 1 }}>Conta (user_id): </span>
+                            <span>{mpStatus.user_id ?? '-'}</span>
+                        </Grid>
+                        <Divider style={{ width: '100%', backgroundColor: '#1b5e20' }} />
+                        <Grid item style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ flex: 1 }}>Válido até: </span>
+                            <span>{formatDate(mpStatus.expires_at)}</span>
+                        </Grid>
+                        <Divider style={{ width: '100%', backgroundColor: '#1b5e20' }} />
+                        <Grid item style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ flex: 1 }}>Última renovação: </span>
+                            <span>{formatDate(mpStatus.last_refresh_at)}</span>
+                        </Grid>
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={5} style={{ display: 'flex', justifyContent: isXs ? 'flex-start' : 'flex-end', alignItems: 'center' }}>
+                        <Button fullWidth={true} onClick={loadMpStatus} variant='outlined' color='primary' disabled={mpStatusLoading}>
+                            Atualizar status
+                        </Button>
+                    </Grid>
+                </Grid>
+            )
+        }
+
+        return box('#ffebee', '#b71c1c', <strong>Conta Mercado Pago não conectada: as vendas caem na conta da Oi, sem split. Gere o link e envie ao organizador.</strong>)
+    }
 
     const GreenSwitch = withStyles({
         switchBase: {
@@ -170,7 +258,7 @@ const FormECommerce = ({
             </Grid>
 
             <Grid item lg={12} md={12} sm={12} xs={12}>
-                <Grid item xs={4}>
+                <Grid item xs={12} md={4}>
                     <TextField
                         label='Nome da loja virtual'
                         name='webstoreUrl'
@@ -230,7 +318,7 @@ const FormECommerce = ({
             </Grid>
 
             <Grid item container lg={12} md={12} sm={12} xs={12} spacing={2}>
-                <Grid item xs={4}>
+                <Grid item xs={12} md={4}>
                     {data.hasSplit && (
                         <TextField
                             label='ID do Mercado Pago'
@@ -276,8 +364,14 @@ const FormECommerce = ({
             )}
 
             {data.hasSplit && (
+                <Grid item container lg={12} md={12} sm={12} xs={12} spacing={5} alignItems='center'>
+                    <Grid item xs={12} sm={12} md={4}>{renderMpStatus()}</Grid>
+                </Grid>
+            )}
+
+            {data.hasSplit && (
                 <Grid item container lg={12} md={12} sm={12} xs={12} spacing={2}>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} md={4}>
                         <TextField
                             label='Url de autenticação OAuth'
                             value={oAuthAuthenticationUrl ?? "Nenhuma url gerada"}
@@ -290,7 +384,7 @@ const FormECommerce = ({
                         />
                     </Grid>
 
-                    <Grid item xs={2}>
+                    <Grid item xs={12} md={2}>
                         <Button onClick={copyOAuthUrl} variant='outlined' color='primary' disabled={!oAuthAuthenticationUrl}>
                             Copiar
                         </Button>
