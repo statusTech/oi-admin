@@ -40,8 +40,11 @@ const Login = () => {
   const getToken = async(user) => {
     
     if(user && (user.uid === 'mIx721WKurVotrfVmggEOqKYCfl1' || authUser.uid === 'mxG5BZs7hUd1qsas4wKH6Lh0fZg1')) {
+      // ID token = prova do login com senha; o backend não aceita só o uid.
+      const idToken = await user.getIdToken();
       const { data, status, statusText } = await Api.post('/authenticateDash', {
-          userKey: user.uid
+          userKey: user.uid,
+          idToken,
       });
       if (status === 200 && data.success) {
           localStorage.setItem('token', data.token);
