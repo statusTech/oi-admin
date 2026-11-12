@@ -23,13 +23,13 @@ Não confundir com o projeto irmão `painel` (também um SPA React de admin do O
 
 ### Fluxo de login → backend
 
-Após autenticar no Firebase, `Login/index.js` chama `POST /authenticateDash` com `{ userKey: user.uid }` (mesmo endpoint documentado em `server-node-backend/CLAUDE.md`), guarda o `token` retornado em `localStorage`, e o interceptor do axios em `src/api/index.js` anexa `Authorization: Bearer <token>` em todas as chamadas subsequentes.
+Após autenticar no Firebase, `Login/index.js` chama `POST /authenticateDash` com `{ userKey: user.uid, idToken }` (o `apiadmin` só aceita os 2 super-admins com ID token válido desde 2026-11-12) (mesmo endpoint documentado em `server-node-backend/CLAUDE.md`), guarda o `token` retornado em `localStorage`, e o interceptor do axios em `src/api/index.js` anexa `Authorization: Bearer <token>` em todas as chamadas subsequentes.
 
 ### Firebase = fonte de verdade dos tenants
 
 `src/firebase.js` conecta no projeto `oi-tickets` (mesmo projeto real de produção usado pelo `server-node-backend` e pelo `painel` — Realtime Database + Storage + Auth, sem emulador configurado). O node `Clients` no Realtime DB (`src/service/clients.js`, modelo em `src/models/Clients.js`) é a lista de tenants; é o mesmo node que `server-node-backend/src/services/DomainResolver.js` lê para resolver `eCommerce.webstoreUrl` → schema `DB<hash>`.
 
-- **Criar tenant** (`src/pages/Orgs/form.js`, `handleSave`): cria usuário no Firebase Auth (`createUser`), gera `dbName = "DB" + sha1(Math.random())` (mesmo formato de schema que o backend Node espera), grava o registro em `Clients/<uid>` e um manager `master: true` em `Managers/<uid>`, faz upload de logos pro Firebase Storage, e por fim chama `POST https://api-databases.oitickets.com.br/newdatabase { database: dbName }` — um microsserviço externo (fora deste monorepo de projetos) que efetivamente provisiona o schema MySQL do tenant.
+- **Criar tenant** (`src/pages/Orgs/form.js`, `handleSave`): cria o usuário no Firebase Auth num **app secundário** (`org-signup`, `src/service/auth.js` `createUser`) para não trocar a sessão do super-admin, sobe os logos, grava `Clients/<pushKey>` e `Managers/<uid>` (`master: true`) **como super-admin** e chama `POST https://api.oitickets.com.br/api/v1/admin/tenant-database { database }` com o JWT do admin — a API (só super-admin) cria o schema MySQL. **Incidente 2026-11-12**: antes o `createUser` trocava a sessão para o cliente novo e as gravações iam como ele (as regras novas do RTDB recusam), e o schema era criado por `https://api-databases.oitickets.com.br/newdatabase`, público e com RCE — fechado.
 - **Editar tenant** (`handleEdit`): mesma lógica sem criar usuário nem chamar `/newdatabase`.
 - **Excluir tenant** (`src/service/clients.js` `removeClient`): `DELETE /user/deleteClient/:uid` no backend Node (`apiadmin.oitickets.com.br`), não mexe direto no Firebase.
 - Existe também uma rotina comentada (`Orgs/index.js` `handleUpdate`, atualmente desligada na UI) que itera todos os `Clients` e chama `POST https://api-databases.oitickets.com.br/updatedatabase` por `dbName` — provavelmente para rodar migrations em lote.
