@@ -171,58 +171,63 @@ const Organization = ({ history }) => {
         }
       }
 
-      let [user, error1] = await createUser(client.email, password);
-      if (!error1) {
-        handleLogoImage(async (imageUrl, webstorelogoData, logoWebstoreUrl) => {
-          const dbName = `DB${sha1(Math.random())}`;
-          let [uid, error2] = await clientsService.save({
-            ...client,
-            dbName,
-            createdAt: +new Date(),
-            expireAt: +new Date(client.expireAt),
-            logoFixed: imageUrl,
-            logoWebstore: webstorelogoData,
-            logoWebstoreUrl: logoWebstoreUrl,
-            uidUser: user.uid,
-            taxes,
-            eCommerce
-          });
-          let [, error3] = await managersService.save(
-            {
-              email: client.email,
-              uid: user.uid,
-              client: uid,
-              dbName,
-              master: true,
-            },
-            user.uid
-          );
-          if (!error2 && !error3) {
-            const res = await axios.post(
-              'https://api-databases.oitickets.com.br/newdatabase',
-              { database: dbName },
-              {
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              }
-            );
-            if (res.data.success) {
-              history.goBack();
-
-            }
-            setButtonLoading(false);
-          } else {
-            setButtonLoading(false);
-            throw new Error('Erro ao cadastrar no banco');
-          }
-        })
-      } else {
-        setButtonLoading(false);
-        throw new Error(errors[user]);
+      const [user, createError] = await createUser(client.email, password);
+      if (createError) {
+        throw new Error(errors[user] ?? `Erro ao criar o usuário (${user})`);
       }
+
+      // Logos antes de gravar o cliente; erro de upload agora cai no catch
+      // (antes ficava preso no callback e a tela não fazia nada).
+      let logos = null;
+      await handleLogoImage((imageUrl, webstorelogoData, logoWebstoreUrl) => {
+        logos = { imageUrl, webstorelogoData, logoWebstoreUrl };
+      });
+
+      const dbName = `DB${sha1(Math.random())}`;
+      const [uid, error2] = await clientsService.save({
+        ...client,
+        dbName,
+        createdAt: +new Date(),
+        expireAt: +new Date(client.expireAt),
+        logoFixed: logos.imageUrl,
+        logoWebstore: logos.webstorelogoData,
+        logoWebstoreUrl: logos.logoWebstoreUrl,
+        uidUser: user.uid,
+        taxes,
+        eCommerce
+      });
+      if (error2) throw new Error('Erro ao gravar o cliente');
+
+      const [, error3] = await managersService.save(
+        {
+          email: client.email,
+          uid: user.uid,
+          client: uid,
+          dbName,
+          master: true,
+        },
+        user.uid
+      );
+      if (error3) throw new Error('Erro ao gravar o usuário do cliente');
+
+      // Banco do cliente pela API (só super-admin). Antes era
+      // api-databases.oitickets.com.br/newdatabase, público — incidente 2026-11-12.
+      const res = await axios.post(
+        'https://api.oitickets.com.br/api/v1/admin/tenant-database',
+        { database: dbName },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      if (!res.data?.success) throw new Error('Erro ao criar o banco do cliente');
+
+      setButtonLoading(false);
+      history.goBack();
     } catch (error) {
-      alert(error?.message ?? 'Ocorreu um erro');
+      alert(error?.response?.data?.message ?? error?.message ?? 'Ocorreu um erro');
       setButtonLoading(false);
     }
   };

@@ -1,6 +1,23 @@
 import { useEffect, useState } from 'react';
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, initializeAuth, getAuth, inMemoryPersistence } from 'firebase/auth';
+import { initializeApp, getApps } from 'firebase/app';
 import Api from '../api';
+// App secundário só para criar a conta do cliente novo. O createUser do SDK
+// loga como o usuário criado; no app principal isso derrubava a sessão do
+// super-admin e as gravações seguintes (Clients/Managers) iam como o cliente —
+// recusadas pelas regras do RTDB desde o incidente de 2026-11-12.
+let signupAuth = null;
+const getSignupAuth = (firebase) => {
+  if (signupAuth) return signupAuth;
+  const signupApp = getApps().find((a) => a.name === 'org-signup') || initializeApp(firebase.app.options, 'org-signup');
+  try {
+    signupAuth = initializeAuth(signupApp, { persistence: inMemoryPersistence });
+  } catch (e) {
+    signupAuth = getAuth(signupApp);
+  }
+  return signupAuth;
+};
+
 const Authentication = (firebase) => {
   const [authUser, setAuthUser] = useState(null);
   useEffect(() => {
@@ -30,16 +47,16 @@ const Authentication = (firebase) => {
         return [errorCode, true];
       });
   };
-  const createUser = (email, password) => {
-    return createUserWithEmailAndPassword(firebase.auth, email, password)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        return [user, false];
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        return [errorCode, true];
-      });
+  const createUser = async (email, password) => {
+    const auth = getSignupAuth(firebase);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      await signOut(auth);
+      return [user, false];
+    } catch (error) {
+      return [error.code, true];
+    }
   };
   const logout = () => {
     return signOut(firebase.auth)
