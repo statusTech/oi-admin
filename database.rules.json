@@ -1,9 +1,20 @@
 {
   "rules": {
-    ".read": true,
-    ".write": "auth != null",
+    ".read": "auth != null && (auth.uid === 'mIx721WKurVotrfVmggEOqKYCfl1' || auth.uid === 'mxG5BZs7hUd1qsas4wKH6Lh0fZg1')",
+    ".write": "auth != null && (auth.uid === 'mIx721WKurVotrfVmggEOqKYCfl1' || auth.uid === 'mxG5BZs7hUd1qsas4wKH6Lh0fZg1')",
     "Clients": {
       ".indexOn": "dbName"
+    },
+    "Managers": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+    "Devices": {
+      "$imei": {
+        ".read": "auth != null && root.child('Managers').child(auth.uid).child('client').exists()",
+        ".write": "auth != null && root.child('Managers').child(auth.uid).child('client').exists() && (!data.exists() || data.val() === root.child('Managers').child(auth.uid).child('client').val()) && (!newData.exists() || newData.val() === root.child('Managers').child(auth.uid).child('client').val())"
+      }
     }
   }
 }
