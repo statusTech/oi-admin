@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import { Check, Plus, Search, X } from 'lucide-react';
 
 import ClientsService from '@/service/clients';
+import { fetchAdminClients } from '@/service/adminClients';
+import { filterNeedsAccessData, resolveClientFilter } from '@/utils/clientFilters';
 import Api from '@/api';
 import { formatDate } from '@/utils/date';
 import { cpfCnpjMask } from '@/utils/mask';
@@ -30,10 +32,30 @@ const formatExpire = (expireAt) => {
 
 const Orgs = () => {
   const history = useHistory();
+  const location = useLocation();
+  const filterKey = new URLSearchParams(location.search).get('filter');
+  const activeFilter = useMemo(() => resolveClientFilter(filterKey), [filterKey]);
+  const [lastAccess, setLastAccess] = useState({});
   const { data, loading, removeClientLocally } = ClientsService();
   const [search, setSearch] = useState('');
   const [confirmDelete, setConfirmDelete] = useState({ id: null, showing: false });
   const [passwordModal, setPasswordModal] = useState({ userId: '', showing: false });
+
+  // Filtros por último acesso dependem do dado da API (uid -> lastAccessAt).
+  useEffect(() => {
+    if (!filterNeedsAccessData(filterKey)) return;
+    fetchAdminClients()
+      .then(({ clients }) => {
+        const map = {};
+        clients.forEach((c) => {
+          map[c.uid ?? c.id] = c.lastAccessAt ? new Date(c.lastAccessAt).getTime() : null;
+        });
+        setLastAccess(map);
+      })
+      .catch(() => {});
+  }, [filterKey]);
+
+  const clearFilter = () => history.push('/dashboard/organization');
 
   const handleGotoCreate = () => history.push('/dashboard/organization/new');
 
@@ -137,11 +159,13 @@ const Orgs = () => {
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return data;
-    return data.filter((c) =>
-      `${c.name ?? ''} ${c.email ?? ''} ${c.CNPJ ?? ''}`.toLowerCase().includes(term)
-    );
-  }, [data, search]);
+    const now = Date.now();
+    return data
+      .filter((c) => !activeFilter || activeFilter.test({ ...c, lastAccessAt: lastAccess[c.uid] ?? null }, now))
+      .filter(
+        (c) => !term || `${c.name ?? ''} ${c.email ?? ''} ${c.CNPJ ?? ''}`.toLowerCase().includes(term)
+      );
+  }, [data, search, activeFilter, lastAccess]);
 
   return (
     <>
@@ -177,6 +201,22 @@ const Orgs = () => {
         }
         headerRightClassName="flex-wrap justify-end"
       >
+        {activeFilter && (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-oi-blue/10 px-3 py-1 text-[12px] font-medium text-oi-blue shadow-[inset_0_0_0_1px_#3B94FF]">
+              Filtro: {activeFilter.label}
+              <button
+                type="button"
+                onClick={clearFilter}
+                aria-label="Limpar filtro"
+                className="border-0 bg-transparent p-0 cursor-pointer text-oi-blue flex"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </span>
+            <span className="text-[12px] text-oi-text-muted tabular-nums">{filtered.length} cliente(s)</span>
+          </div>
+        )}
         {loading ? (
           <div className="flex flex-col gap-2">
             <Skeleton className="h-8 w-full" />

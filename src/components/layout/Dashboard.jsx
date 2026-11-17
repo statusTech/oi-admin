@@ -50,7 +50,7 @@ const Dashboard = () => {
                 {React.cloneElement(page.content, { history })}
               </Route>
             ))}
-            <Redirect exact from="/dashboard" to="/dashboard/organization" />
+            <Redirect exact from="/dashboard" to="/dashboard/home" />
           </Switch>
         </div>
       </SidebarInset>

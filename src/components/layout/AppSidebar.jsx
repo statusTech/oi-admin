@@ -97,12 +97,33 @@ const NavItem = ({ route, handleClick, openTitle, setOpenTitle }) => {
     const full = '/dashboard' + path;
     if (pathname === full) return true;
     if (!pathname.startsWith(full + '/')) return false;
-    const moreSpecific = visibleItems(route).some((item) => {
+    const moreSpecific = (route.list ? visibleItems(route) : []).some((item) => {
       const p = '/dashboard' + item.path;
       return p !== full && p.length > full.length && (pathname === p || pathname.startsWith(p + '/'));
     });
     return !moreSpecific;
   };
+
+  if (!route.list) {
+    const selected = hasSelected(route.path);
+    return (
+      <SidebarMenuItem className={cn(isCollapsed && 'flex justify-center')}>
+        <SidebarMenuButton
+          isActive={selected}
+          tooltip={route.title}
+          onClick={() => handleClick(route.path)}
+          className={cn(
+            'rounded-xl text-sm font-medium transition-all duration-200',
+            isCollapsed ? 'size-11 mx-auto p-0 justify-center' : 'h-11 px-3.5 w-full gap-3.5',
+            selected ? ACTIVE : INACTIVE
+          )}
+        >
+          <route.icon className="w-5 h-5 shrink-0" />
+          {!isCollapsed && <span className="truncate">{route.title}</span>}
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
 
   const isGroupActive = route.list.some((item) => hasSelected(item.path));
   const isOpen = openTitle === route.title;

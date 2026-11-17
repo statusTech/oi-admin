@@ -33,7 +33,7 @@ const Navbar = () => {
         <Menu className="h-6 w-6 text-slate-700" />
       </SidebarTrigger>
 
-      <Link to="/dashboard/organization" className="md:hidden inline-flex items-center shrink-0 mr-1">
+      <Link to="/dashboard/home" className="md:hidden inline-flex items-center shrink-0 mr-1">
         <img src={logoBlue} alt="Oi Tickets" className="h-6 w-auto object-contain block" />
       </Link>
 
