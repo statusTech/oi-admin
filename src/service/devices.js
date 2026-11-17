@@ -8,7 +8,7 @@ import Devices from '../models/Devices';
 const DevicesService = () => {
   const table = 'Devices';
   const [data, setData] = useState([]);
-  const load = Api.get(`/admin/device`);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     reload();
@@ -19,13 +19,17 @@ const DevicesService = () => {
 
   const reload = async () => {
     const devices = [];
-    const {success, data} = (await load).data;
-    if(success){
-      for (let i in data) {
-        const devicesObj = Devices();
-        devices.push(devicesObj.fromJson(data[i]));
+    try {
+      const {success, data} = (await Api.get(`/admin/device`)).data;
+      if(success){
+        for (let i in data) {
+          const devicesObj = Devices();
+          devices.push(devicesObj.fromJson(data[i]));
+        }
+        setData(devices);
       }
-      setData(devices);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -39,6 +43,6 @@ const DevicesService = () => {
     return false;
   };
 
-  return { data, reload, unlink };
+  return { data, loading, reload, unlink };
 };
 export default DevicesService;

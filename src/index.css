@@ -1,13 +1,78 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 212 100% 62%;
+    --radius: 0.5rem;
+    --sidebar-background: 224 45% 6%;
+    --sidebar-foreground: 215 20% 75%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 223 30% 14%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 223 25% 12%;
+    --sidebar-ring: 221 83% 53%;
+  }
+  button {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: none;
+    border-style: solid;
+    box-shadow: none;
+  }
+  .dark {
+    --sidebar-background: 224 45% 6%;
+    --sidebar-foreground: 215 20% 75%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 223 30% 14%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 223 25% 12%;
+    --sidebar-ring: 221 83% 53%;
+  }
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* Ocultar barra de rolagem no menu lateral mantendo a rolagem perfeitamente funcional */
+[data-sidebar="sidebar"],
+[data-sidebar="sidebar"] *,
+[data-sidebar="content"],
+[data-sidebar="content"] *,
+.no-scrollbar,
+.no-scrollbar * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
+
+[data-sidebar="sidebar"]::-webkit-scrollbar,
+[data-sidebar="sidebar"] *::-webkit-scrollbar,
+[data-sidebar="content"]::-webkit-scrollbar,
+[data-sidebar="content"] *::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar,
+.no-scrollbar *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+html, body, #root { min-height: 100%; }
+body { font-family: 'Open Sans', Roboto, 'Helvetica Neue', Arial, Helvetica, sans-serif; }
