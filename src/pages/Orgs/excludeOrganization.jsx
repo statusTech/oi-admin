@@ -3,13 +3,14 @@ import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const initialDeletion = { finished: false, deleting: false, message: 'Essa ação é irreversível!' };
 
@@ -27,30 +28,26 @@ const ModalExcludeOrganization = ({ show, onClose = () => {}, handleConfirm = ()
   };
 
   return (
-    <Dialog open={show} onOpenChange={(open) => !open && !deletion.deleting && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Tem certeza que deseja excluir esse cliente?</DialogTitle>
-          <DialogDescription className="text-base pt-2">{deletion.message}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-0">
+    <AlertDialog open={show} onOpenChange={(open) => !open && !deletion.deleting && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Tem certeza que deseja excluir esse cliente?</AlertDialogTitle>
+          <AlertDialogDescription className="text-base pt-2">{deletion.message}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="gap-2 sm:gap-0">
+          {/* Botão comum (não AlertDialogAction) para o diálogo continuar aberto durante a exclusão. */}
           {!deletion.finished && (
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deletion.deleting}
-              onClick={onConfirm}
-            >
+            <Button type="button" variant="destructive" disabled={deletion.deleting} onClick={onConfirm}>
               {deletion.deleting && <Loader2 className="h-4 w-4 animate-spin" />}
               Tenho certeza
             </Button>
           )}
-          <Button type="button" variant="ghost" disabled={deletion.deleting} onClick={onClose}>
+          <AlertDialogCancel disabled={deletion.deleting} className="mt-0">
             {deletion.finished ? 'Fechar' : 'Cancelar'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 

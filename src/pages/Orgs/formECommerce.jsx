@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { Loader2 } from 'lucide-react';
 
 import Api from '@/api';
@@ -6,18 +7,25 @@ import { currencyMask, percentageMask, removeMask } from '@/utils/mask';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/form-field';
-import { SwitchField } from '@/components/ui/switch-field';
 import { toast } from '@/hooks/use-toast';
+import { ControlledInput, ControlledSwitch } from './fields';
+import MpStatus from './mpStatus';
 
 const defaultApiEndpoint = import.meta.env.VITE_ENDPOINT_DEFAULT ?? 'https://api.oitickets.com.br/api/v1';
 
-const FormECommerce = ({ data, setData, isWebstoreNameAvailable, clientId }) => {
+// Sub-formulário da loja virtual: roda dentro do FormProvider de form.jsx e
+// grava tudo sob o nó `eCommerce` do formulário.
+const FormECommerce = ({ isWebstoreNameAvailable, clientId }) => {
+  const { control, setValue } = useFormContext();
+  const [chargeClient, adminTax, credit, hasSplit] = useWatch({
+    control,
+    name: ['eCommerce.chargeClient', 'eCommerce.adminTax', 'eCommerce.credit', 'eCommerce.hasSplit'],
+  });
+
   const [buttonLoading, setButtonLoading] = useState(false);
   const [oAuthAuthenticationUrl, setOAuthAuthenticationUrl] = useState(null);
 
-  const handleChangeOpposite = (e, field, opposite) => {
-    setData({ ...data, [field]: removeMask(e.target.value), [opposite]: 0 });
-  };
+  const set = (field, value) => setValue(`eCommerce.${field}`, value, { shouldDirty: true });
 
   const loadOAuthUrl = async () => {
     setButtonLoading(true);
@@ -51,51 +59,50 @@ const FormECommerce = ({ data, setData, isWebstoreNameAvailable, clientId }) => 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-x-6 gap-y-3">
-        <SwitchField
-          id="chargeClient"
+        <ControlledSwitch
+          name="eCommerce.chargeClient"
           label="Cobrar do cliente"
-          checked={data.chargeClient}
-          onCheckedChange={(checked) =>
-            setData({
-              ...data,
-              chargeClient: checked,
-              ...(checked ? {} : { additionalTaxCard: null, additionalTaxPix: null }),
-            })
-          }
+          onCheckedChange={(checked) => {
+            if (!checked) {
+              set('additionalTaxCard', null);
+              set('additionalTaxPix', null);
+            }
+          }}
         />
-        <SwitchField
-          id="adminTax"
+        <ControlledSwitch
+          name="eCommerce.adminTax"
           label="Taxa administrativa"
-          checked={data.adminTax}
-          onCheckedChange={(checked) =>
-            setData({ ...data, adminTaxValue: 0, adminTaxPercentage: 0, adminTaxMinimum: 0, adminTax: checked })
-          }
+          onCheckedChange={() => {
+            set('adminTaxValue', 0);
+            set('adminTaxPercentage', 0);
+            set('adminTaxMinimum', 0);
+          }}
         />
       </div>
 
-      {data.adminTax && (
+      {adminTax && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <FormField label="Taxa (R$)" htmlFor="adminTaxValue">
-            <Input
-              id="adminTaxValue"
-              value={currencyMask(data.adminTaxValue)}
-              onChange={(e) => handleChangeOpposite(e, 'adminTaxValue', 'adminTaxPercentage')}
-            />
-          </FormField>
-          <FormField label="Taxa (%)" htmlFor="adminTaxPercentage">
-            <Input
-              id="adminTaxPercentage"
-              value={percentageMask(data.adminTaxPercentage)}
-              onChange={(e) => handleChangeOpposite(e, 'adminTaxPercentage', 'adminTaxValue')}
-            />
-          </FormField>
-          <FormField label="Taxa mínima (R$)" htmlFor="adminTaxMinimum">
-            <Input
-              id="adminTaxMinimum"
-              value={currencyMask(data?.adminTaxMinimum)}
-              onChange={(e) => setData({ ...data, adminTaxMinimum: removeMask(e.target.value) })}
-            />
-          </FormField>
+          {/* Valor fixo e percentual são excludentes: preencher um zera o outro. */}
+          <ControlledInput
+            name="eCommerce.adminTaxValue"
+            label="Taxa (R$)"
+            mask={currencyMask}
+            parse={removeMask}
+            onValueChange={() => set('adminTaxPercentage', 0)}
+          />
+          <ControlledInput
+            name="eCommerce.adminTaxPercentage"
+            label="Taxa (%)"
+            mask={percentageMask}
+            parse={removeMask}
+            onValueChange={() => set('adminTaxValue', 0)}
+          />
+          <ControlledInput
+            name="eCommerce.adminTaxMinimum"
+            label="Taxa mínima (R$)"
+            mask={currencyMask}
+            parse={removeMask}
+          />
         </div>
       )}
 
@@ -104,94 +111,60 @@ const FormECommerce = ({ data, setData, isWebstoreNameAvailable, clientId }) => 
           Formas de pagamento
         </span>
         <div className="flex flex-wrap gap-x-6 gap-y-3">
-          <SwitchField
-            id="credit"
+          <ControlledSwitch
+            name="eCommerce.credit"
             label="Cartão de crédito"
-            checked={data.credit}
-            onCheckedChange={(checked) =>
-              setData({
-                ...data,
-                credit: checked,
-                allowInstallments: checked ? data.allowInstallments : false,
-              })
-            }
+            onCheckedChange={(checked) => {
+              if (!checked) set('allowInstallments', false);
+            }}
           />
-          {data.credit && (
-            <SwitchField
-              id="allowInstallments"
-              label="Permitir parcelamento"
-              checked={data.allowInstallments}
-              onCheckedChange={(checked) => setData({ ...data, allowInstallments: checked })}
-            />
-          )}
-          <SwitchField
-            id="pix"
-            label="PIX"
-            checked={data.pix}
-            onCheckedChange={(checked) => setData({ ...data, pix: checked })}
-          />
+          {credit && <ControlledSwitch name="eCommerce.allowInstallments" label="Permitir parcelamento" />}
+          <ControlledSwitch name="eCommerce.pix" label="PIX" />
         </div>
       </div>
 
-      <FormField label="Nome da loja virtual" htmlFor="webstoreUrl" className="max-w-md">
-        <div className="relative flex items-center">
-          <Input
-            id="webstoreUrl"
-            value={data.webstoreUrl}
-            onChange={(e) => setData({ ...data, webstoreUrl: e.target.value })}
-            disabled={!isWebstoreNameAvailable}
-            className="pr-28"
-          />
-          <span className="pointer-events-none absolute right-3 text-sm text-muted-foreground">
-            .listapix.com
-          </span>
-        </div>
-      </FormField>
-
-      <SwitchField
-        id="hasSplit"
-        label="Split"
-        checked={data.hasSplit}
-        onCheckedChange={(checked) =>
-          setData({
-            ...data,
-            splitValue: 0,
-            splitPercentage: 0,
-            additionalTaxCard: null,
-            additionalTaxPix: null,
-            hasSplit: checked,
-          })
-        }
+      <ControlledInput
+        name="eCommerce.webstoreUrl"
+        label="Nome da loja virtual"
+        disabled={!isWebstoreNameAvailable}
+        inputClassName="pr-28"
+        suffix=".listapix.com"
+        className="max-w-md"
       />
 
-      {data.hasSplit && (
-        <>
-          <FormField label="ID do Mercado Pago" htmlFor="gatewayToken" className="max-w-md">
-            <Input
-              id="gatewayToken"
-              value={data.gatewayToken}
-              onChange={(e) => setData({ ...data, gatewayToken: e.target.value })}
-            />
-          </FormField>
+      <ControlledSwitch
+        name="eCommerce.hasSplit"
+        label="Split"
+        onCheckedChange={() => {
+          set('splitValue', 0);
+          set('splitPercentage', 0);
+          set('additionalTaxCard', null);
+          set('additionalTaxPix', null);
+        }}
+      />
 
-          {data.chargeClient && (
+      {hasSplit && (
+        <>
+          <ControlledInput name="eCommerce.gatewayToken" label="ID do Mercado Pago" className="max-w-md" />
+
+          {chargeClient && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
-              <FormField label="Taxa adicional cartão (%)" htmlFor="additionalTaxCard">
-                <Input
-                  id="additionalTaxCard"
-                  value={percentageMask(data.additionalTaxCard)}
-                  onChange={(e) => setData({ ...data, additionalTaxCard: removeMask(e.target.value) })}
-                />
-              </FormField>
-              <FormField label="Taxa adicional PIX (%)" htmlFor="additionalTaxPix">
-                <Input
-                  id="additionalTaxPix"
-                  value={percentageMask(data.additionalTaxPix)}
-                  onChange={(e) => setData({ ...data, additionalTaxPix: removeMask(e.target.value) })}
-                />
-              </FormField>
+              <ControlledInput
+                name="eCommerce.additionalTaxCard"
+                label="Taxa adicional cartão (%)"
+                mask={percentageMask}
+                parse={removeMask}
+              />
+              <ControlledInput
+                name="eCommerce.additionalTaxPix"
+                label="Taxa adicional PIX (%)"
+                mask={percentageMask}
+                parse={removeMask}
+              />
             </div>
           )}
+
+          <MpStatus clientId={clientId} enabled={hasSplit} />
 
           <div className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-2xl">
             <FormField label="Url de autenticação OAuth" htmlFor="oauthUrl" className="flex-1">
