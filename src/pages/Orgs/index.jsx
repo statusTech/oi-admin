@@ -291,13 +291,6 @@ const Orgs = () => {
           ),
       },
       {
-        id: 'cashless',
-        header: 'Cashless',
-        enableSorting: false,
-        accessorFn: (r) => r.cashless,
-        cell: ({ row }) => <BoolIcon value={row.original.cashless} />,
-      },
-      {
         id: 'devices',
         header: 'Dispositivos',
         enableSorting: false,
