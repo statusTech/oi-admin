@@ -1,5 +1,5 @@
-import React from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import React, { useEffect, useRef, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Cell, Label, Pie, PieChart, XAxis, YAxis } from 'recharts';
 
 import SectionCard from '@/components/layout/SectionCard';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -18,13 +18,14 @@ const ChartBody = ({ loading, hasData, children }) => {
 };
 
 // Barras clicáveis: cada barra leva à listagem filtrada.
-export const BarsCard = ({ title, data, color, label, onSelect, loading }) => {
+export const BarsCard = ({ title, mobileSubtitle, data, color, label, onSelect, loading }) => {
   const config = { count: { label, color } };
   const rows = data.map((d) => ({ ...d, name: d.name ?? formatMonth(d.month) }));
   const hasData = rows.some((r) => r.count > 0);
 
   return (
     <SectionCard title={title}>
+      {mobileSubtitle && <p className="sm:hidden -mt-1 mb-2 text-xs text-oi-text-muted">{mobileSubtitle}</p>}
       <ChartBody loading={loading} hasData={hasData}>
         <ChartContainer config={config} className={HEIGHT}>
           <BarChart data={rows} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
@@ -47,47 +48,93 @@ export const BarsCard = ({ title, data, color, label, onSelect, loading }) => {
   );
 };
 
-// Rosca ativos x inativos; cada fatia leva à listagem filtrada.
+const RING_THICKNESS = 0.16;
+const TOP_PADDING = 10;
+const MAX_RADIUS = 170;
+
+// Gauge semicircular segmentado (ver docs/grafico-formas-de-pagamento.md).
+// Raio calculado pela largura do wrapper, pois o Recharts usa min(largura, altura)/2.
 export const StatusPieCard = ({ title, slices, onSelect, loading }) => {
+  const wrapperRef = useRef(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
+    observer.observe(el);
+    setWidth(el.getBoundingClientRect().width);
+    return () => observer.disconnect();
+  }, [loading]);
+
   const total = slices.reduce((sum, s) => sum + s.value, 0);
   const config = Object.fromEntries(slices.map((s) => [s.key, { label: s.label, color: s.color }]));
+  const data = slices.filter((s) => s.value > 0).map((s) => ({ ...s, fill: s.color }));
+
+  const outerRadius = Math.max(60, Math.min(width / 2 - 8, MAX_RADIUS - TOP_PADDING));
+  const innerRadius = outerRadius * (1 - RING_THICKNESS);
+  const cornerRadius = (outerRadius - innerRadius) / 2;
+  const cy = outerRadius + TOP_PADDING;
+
+  const renderCenter = ({ viewBox }) => {
+    const cx = viewBox?.cx ?? width / 2;
+    return (
+      <text x={cx} y={cy - innerRadius * 0.28} textAnchor="middle">
+        <tspan className="fill-oi-text" fontSize={22} fontWeight={700}>
+          {total.toLocaleString('pt-BR')}
+        </tspan>
+        <tspan x={cx} dy={20} className="fill-oi-text-muted" fontSize={12}>
+          clientes
+        </tspan>
+      </text>
+    );
+  };
 
   return (
-    <SectionCard title={title}>
+    <SectionCard title={title} className="h-full" bodyClassName="flex-1 justify-center">
       <ChartBody loading={loading} hasData={total > 0}>
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <ChartContainer config={config} className="aspect-square h-[220px] w-[220px] shrink-0">
-            <PieChart>
-              <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="key" />} />
+        <div ref={wrapperRef} className="flex flex-col gap-4 w-full">
+          <ChartContainer
+            config={config}
+            className="aspect-auto w-full"
+            style={{ height: outerRadius + TOP_PADDING * 2 }}
+          >
+            <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+              <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="key" />} />
               <Pie
-                data={slices.map((s) => ({ ...s, fill: s.color }))}
+                data={data}
                 dataKey="value"
-                isAnimationActive={false}
                 nameKey="key"
-                innerRadius={60}
-                outerRadius={95}
+                startAngle={180}
+                endAngle={0}
+                cx="50%"
+                cy={cy}
+                innerRadius={innerRadius}
+                outerRadius={outerRadius}
+                cornerRadius={cornerRadius}
                 paddingAngle={2}
-                strokeWidth={0}
+                stroke="none"
+                isAnimationActive={false}
               >
-                {slices.map((s) => (
+                {data.map((s) => (
                   <Cell key={s.key} fill={s.color} className="cursor-pointer" onClick={() => onSelect?.(s)} />
                 ))}
+                <Label content={renderCenter} position="center" />
               </Pie>
             </PieChart>
           </ChartContainer>
-          <ul className="flex flex-col gap-2 w-full">
+          <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             {slices.map((s) => (
               <li key={s.key}>
                 <button
                   type="button"
                   onClick={() => onSelect?.(s)}
-                  className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 border-0 bg-transparent cursor-pointer hover:bg-muted text-left"
+                  className="flex items-center gap-2 text-[13px] border-0 bg-transparent cursor-pointer p-0"
                 >
-                  <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                  <span className="text-[13px] text-oi-text flex-1">{s.label}</span>
-                  <span className="text-[13px] font-semibold tabular-nums text-oi-text">{s.value}</span>
-                  <span className="text-xs tabular-nums text-oi-text-muted w-10 text-right">
-                    {total ? Math.round((s.value / total) * 100) : 0}%
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                  <span className="text-oi-text">{s.label}</span>
+                  <span className="text-oi-text-muted tabular-nums">
+                    {s.value.toLocaleString('pt-BR')} ({total ? ((s.value / total) * 100).toFixed(1) : '0.0'}%)
                   </span>
                 </button>
               </li>

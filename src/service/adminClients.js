@@ -1,11 +1,13 @@
 import Api from '../api';
 
+const defaultApiEndpoint = import.meta.env.VITE_ENDPOINT_DEFAULT ?? 'https://api.oitickets.com.br/api/v1';
+
 /**
- * GET /api/v1/admin/clients (KAN-371) — só super-admin.
+ * GET /api/v1/admin/clients (KAN-371) — só super-admin (403 para outros tokens).
  *
- * ATENÇÃO: o contrato oficial (docs/FRONTEND_ADMIN_CLIENTES.md no backend) ainda
- * não estava publicado quando isto foi escrito. Os nomes abaixo são a suposição
- * adotada; se o backend usar outros, ajuste SÓ este normalizador.
+ * Fica na API PRINCIPAL (VITE_ENDPOINT_DEFAULT), não no apiadmin. Contrato em
+ * docs/contract.md. Os KPIs seguem as regras de src/utils/clientFilters.js; se
+ * mudar uma regra lá, avisar o backend.
  *
  * {
  *   success: true,
@@ -68,6 +70,6 @@ export const normalizeAdminClients = (body) => {
 };
 
 export const fetchAdminClients = async () => {
-  const res = await Api.get('/admin/clients');
+  const res = await Api.get('/admin/clients', { baseURL: defaultApiEndpoint });
   return normalizeAdminClients(res.data);
 };

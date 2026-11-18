@@ -11,7 +11,6 @@ import {
   UserPlus,
   UserX,
   Users,
-  Wallet,
 } from 'lucide-react';
 
 import { fetchAdminClients } from '@/service/adminClients';
@@ -30,16 +29,15 @@ const KPIS = [
   { key: 'noExpiry', label: 'Sem vencimento', icon: InfinityIcon, color: '#747474', filter: 'noExpiry' },
   { key: 'withListaPix', label: 'Com Lista PIX', icon: QrCode, color: '#9B59B6', filter: 'listaPix' },
   { key: 'onlyListaPix', label: 'Só Lista PIX', icon: Store, color: '#CD6090', filter: 'onlyListaPix' },
-  { key: 'withCashless', label: 'Com cashless', icon: Wallet, color: '#2FD8A0', filter: 'cashless' },
   { key: 'noAccess30Days', label: 'Sem acesso há 30+ dias', icon: EyeOff, color: '#FF7043', filter: 'noAccess30' },
   { key: 'newThisMonth', label: 'Novos no mês', icon: UserPlus, color: '#3B94FF', filter: 'newThisMonth' },
 ];
 
 const ACCESS_BARS = [
-  { key: 'upTo7', name: 'Até 7 dias' },
-  { key: 'from8to30', name: '8–30 dias' },
-  { key: 'from31to90', name: '31–90 dias' },
-  { key: 'over90', name: 'Mais de 90' },
+  { key: 'upTo7', name: '1-7' },
+  { key: 'from8to30', name: '8-30' },
+  { key: 'from31to90', name: '31-90' },
+  { key: 'over90', name: '90+' },
   { key: 'never', name: 'Nunca' },
 ];
 
@@ -75,7 +73,7 @@ const Home = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {KPIS.map(({ key, label, icon: Icon, color, filter }) => (
           <KpiCard
             key={key}
@@ -118,6 +116,7 @@ const Home = () => {
         />
         <BarsCard
           title="Último acesso"
+          mobileSubtitle="(em dias)"
           label="Clientes"
           color="#4C7CD0"
           loading={loading}
