@@ -22,7 +22,7 @@ const Authentication = (firebase) => {
   const [authUser, setAuthUser] = useState(null);
   useEffect(() => {
     onAuthStateChanged(firebase.auth, (user) => {
-      if(user.uid === 'mIx721WKurVotrfVmggEOqKYCfl1' || user.uid === 'mxG5BZs7hUd1qsas4wKH6Lh0fZg1')
+      if(user?.uid === 'mIx721WKurVotrfVmggEOqKYCfl1' || user?.uid === 'mxG5BZs7hUd1qsas4wKH6Lh0fZg1')
         setAuthUser(user);
       else
         setAuthUser(null);
@@ -32,7 +32,7 @@ const Authentication = (firebase) => {
     return signInWithEmailAndPassword(firebase.auth, email, password)
       .then((userCredential) => {
         const user = userCredential.user;
-        if(user.uid === 'mIx721WKurVotrfVmggEOqKYCfl1' || user.uid === 'mxG5BZs7hUd1qsas4wKH6Lh0fZg1') {
+        if(user?.uid === 'mIx721WKurVotrfVmggEOqKYCfl1' || user?.uid === 'mxG5BZs7hUd1qsas4wKH6Lh0fZg1') {
           setAuthUser(user);
           return [user, false];
         } else {
