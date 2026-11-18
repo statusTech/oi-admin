@@ -35,9 +35,14 @@ const DevicesService = () => {
 
   const unlink = async (imei) => {
     if(imei) {
-     const {success} =  (await Api.delete(`/admin/device/${imei}`)).data;
-      if(success){
-        reload();
+      try {
+        const {success} =  (await Api.delete(`/admin/device/${imei}`)).data;
+        if(success){
+          reload();
+          return true;
+        }
+      } catch {
+        return false;
       }
     }
     return false;

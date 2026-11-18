@@ -1,5 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 import DevicesService from '@/service/devices';
 import SectionCard from '@/components/layout/SectionCard';
@@ -14,14 +23,16 @@ const Imei = () => {
   const { data, loading, unlink } = DevicesService();
   const [search, setSearch] = useState('');
 
-  const handleUnlink = async (imei) => {
-    if (!window.confirm('Deseja realmente desvincular?')) return;
-    try {
-      await unlink(imei);
-      toast({ variant: 'success', title: 'Dispositivo desvinculado' });
-    } catch {
-      toast({ variant: 'destructive', title: 'Não foi possível desvincular o dispositivo' });
-    }
+  const [target, setTarget] = useState(null); // imei aguardando confirmação
+  const [unlinking, setUnlinking] = useState(false);
+
+  const handleUnlink = async () => {
+    setUnlinking(true);
+    const ok = await unlink(target);
+    setUnlinking(false);
+    setTarget(null);
+    if (ok) toast({ variant: 'success', title: 'Dispositivo desvinculado' });
+    else toast({ variant: 'destructive', title: 'Não foi possível desvincular o dispositivo' });
   };
 
   const columns = useMemo(
@@ -43,7 +54,7 @@ const Imei = () => {
             size="sm"
             variant="outline"
             className="text-destructive hover:text-destructive"
-            onClick={() => handleUnlink(row.original.imei)}
+            onClick={() => setTarget(row.original.imei)}
           >
             Desvincular
           </Button>
@@ -84,6 +95,26 @@ const Imei = () => {
       ) : (
         <DataTable columns={columns} data={filtered} />
       )}
+
+      <AlertDialog open={target !== null} onOpenChange={(open) => !open && !unlinking && setTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desvincular dispositivo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O IMEI {target} será desvinculado do cliente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="destructive" disabled={unlinking} onClick={handleUnlink}>
+              {unlinking && <Loader2 className="h-4 w-4 animate-spin" />}
+              Desvincular
+            </Button>
+            <AlertDialogCancel disabled={unlinking} className="mt-0">
+              Cancelar
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SectionCard>
   );
 };
