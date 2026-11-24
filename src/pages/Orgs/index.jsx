@@ -30,6 +30,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ModalPassword from './changePassword';
 import ModalExcludeOrganization from './excludeOrganization';
 
+// Exclusão na API principal (não no apiadmin): só ela apaga o banco do
+// cliente, tira o cliente do Firebase e libera o domínio da Lista PIX.
+const defaultApiEndpoint = import.meta.env.VITE_ENDPOINT_DEFAULT ?? 'https://api.oitickets.com.br/api/v1';
+
 const BoolIcon = ({ value }) =>
   value ? (
     <Check className="h-4 w-4 text-oi-green" aria-label="Sim" />
@@ -129,22 +133,39 @@ const Orgs = () => {
     if (!id) return { message: 'Usuário já deletado anteriormente.' };
 
     let status = 0;
+    let body = null;
 
-    await Api.delete(`/user/deleteClient/${id}`)
+    await Api.delete(`/user/deleteClient/${id}`, { baseURL: defaultApiEndpoint })
       .then((res) => {
         status = res.status;
+        body = res.data;
       })
       .catch((err) => {
         status = err?.response?.status;
+        body = err?.response?.data;
       });
-
-    if (status === 400) {
-      return { message: 'Usuário não encontrado. Tente novamente mais tarde.' };
-    }
 
     if (status === 200) {
       removeClientLocally(id);
-      return { message: 'Cliente excluido com sucesso.' };
+      return {
+        message: body?.domain
+          ? `Cliente excluído. O domínio "${body.domain}" da Lista PIX está livre.`
+          : 'Cliente excluído com sucesso.',
+      };
+    }
+
+    if (status === 404) {
+      removeClientLocally(id);
+      return { message: 'Cliente não encontrado (já tinha sido excluído).' };
+    }
+
+    // 403/409/400/500 já vêm com a mensagem pronta do backend.
+    if (body?.error) return { message: body.error };
+
+    // 504: um banco muito grande pode passar do tempo da requisição; a
+    // exclusão continua no servidor.
+    if (status === 504) {
+      return { message: 'A exclusão está demorando (banco grande). Atualize a lista em alguns minutos.' };
     }
 
     return { message: 'Houve um problema na operação. Tente novamente mais tarde.' };

@@ -12,7 +12,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-const initialDeletion = { finished: false, deleting: false, message: 'Essa ação é irreversível!' };
+const initialDeletion = {
+  finished: false,
+  deleting: false,
+  message:
+    'Essa ação é irreversível! Apaga o banco do cliente, os logins e o cadastro, e libera o domínio da Lista PIX. Fica um backup no servidor.',
+};
 
 const ModalExcludeOrganization = ({ show, onClose = () => {}, handleConfirm = () => {} }) => {
   const [deletion, setDeletion] = useState(initialDeletion);
