@@ -255,7 +255,18 @@ const Orgs = () => {
         id: 'name',
         accessorFn: (r) => String(r.name ?? '').toLowerCase(),
         header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" />,
-        cell: ({ row }) => row.original.name,
+        // E-mail = login do dono (Clients.email; em 2026-11-24 batia com o
+        // Firebase Auth em todos os clientes com login). Pedido do Ricardo.
+        cell: ({ row }) => (
+          <div className="flex flex-col min-w-0">
+            <span>{row.original.name}</span>
+            {row.original.email && (
+              <span className="text-xs text-muted-foreground truncate" title={row.original.email}>
+                {row.original.email}
+              </span>
+            )}
+          </div>
+        ),
       },
       {
         id: 'CNPJ',
