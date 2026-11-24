@@ -105,7 +105,6 @@ export const STATUS_OPTIONS = [
 export const PRODUCT_OPTIONS = [
   { value: 'listaPix', label: 'Lista PIX' },
   { value: 'onlyListaPix', label: 'Só Lista PIX' },
-  { value: 'cashless', label: 'Cashless' },
 ];
 
 export const ACCESS_OPTIONS = [
