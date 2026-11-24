@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const Api = axios.create({
     // baseURL: 'http://34.71.33.60:3030/api/v1',
-    baseURL: process.env.REACT_APP_ENDPOINT
+    baseURL: import.meta.env.VITE_ENDPOINT
 });
 
 Api.interceptors.request.use((config) => {

@@ -6,6 +6,7 @@ import Clients from '../models/Clients';
 const ClientsService = () => {
   const table = 'Clients';
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const load = ref(firebase.db, table);
 
   useEffect(() => {
@@ -37,14 +38,18 @@ const ClientsService = () => {
 
   const reload = async () => {
     const clients = [];
-    const snapshot = await get(load);
-    if (snapshot.exists()) {
-      const snapshotVal = snapshot.val();
-      for (let i in snapshotVal) {
-        const clientObj = Clients();
-        clients.push(clientObj.fromJson({ uid: i, ...snapshotVal[i] }));
+    try {
+      const snapshot = await get(load);
+      if (snapshot.exists()) {
+        const snapshotVal = snapshot.val();
+        for (let i in snapshotVal) {
+          const clientObj = Clients();
+          clients.push(clientObj.fromJson({ uid: i, ...snapshotVal[i] }));
+        }
+        setData(clients);
       }
-      setData(clients);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -87,6 +92,6 @@ const ClientsService = () => {
     }
   };
 
-  return { data, checkWebstoreNameAvailability, save, saveUpdate, reload, removeClientLocally };
+  return { data, loading, checkWebstoreNameAvailability, save, saveUpdate, reload, removeClientLocally };
 };
 export default ClientsService;
