@@ -2,6 +2,7 @@ import firebase from '../firebase';
 import { ref, set, get, update, push, child } from 'firebase/database';
 import { useState, useEffect } from 'react';
 import Clients from '../models/Clients';
+import { undefinedToNull } from '../utils/firebaseValue';
 
 const ClientsService = () => {
   const table = 'Clients';
@@ -58,7 +59,7 @@ const ClientsService = () => {
     if (!uid) {
       key = push(child(ref(firebase.db), table)).key;
     }
-    return set(ref(firebase.db, `${table}/${key}`), data)
+    return set(ref(firebase.db, `${table}/${key}`), undefinedToNull(data))
       .then(() => [key, false])
       .catch(() => [null, true]);
   };
@@ -68,7 +69,7 @@ const ClientsService = () => {
     if (!uid) {
       key = push(child(ref(firebase.db), table)).key;
     }
-    return update(ref(firebase.db, `${table}/${key}`), data)
+    return update(ref(firebase.db, `${table}/${key}`), undefinedToNull(data))
       .then(() => [key, false])
       .catch(() => [null, true]);
   };
